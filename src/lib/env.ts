@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const schema = z.object({
   APP_ORIGIN: z.url(),
-  DATABASE_URL: z.string().min(1),
+  DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, "must start with postgresql:// (no quotes)"),
   SETUP_TOKEN: z.string().min(24).optional().or(z.literal("")),
   TOKEN_ENC_KEY: z
     .string()
@@ -20,7 +20,7 @@ export function env(): Env {
   if (!cached) {
     const parsed = schema.safeParse(process.env);
     if (!parsed.success) {
-      const fields = parsed.error.issues.map((i) => i.path.join(".")).join(", ");
+      const fields = parsed.error.issues.map((i) => `${i.path.join(".")} (${i.message})`).join(", ");
       throw new Error(`Invalid or missing environment variables: ${fields}`);
     }
     const origin = new URL(parsed.data.APP_ORIGIN);
